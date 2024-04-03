@@ -3,18 +3,16 @@
 #include <sys/stat.h>
 #include <string.h>
 
-// this function is called for every encountered directory entry
 void print_entry(char *dir_entry_name) {
     struct stat info;
 
     if(stat(dir_entry_name, &info) == -1) {
         perror(dir_entry_name);
     } else {
-        if(S_ISDIR(info.st_mode)) {      // if this directory entry is a subdirectory
+        if(S_ISDIR(info.st_mode)) {
             printf("%s is a directory\n", dir_entry_name);
-            // do_find(dir_entry_name);  // explore this subdirectory
         }
-        if(1) { // use strstr() to check if the current directory entry's name matches the substring
+        if(1) {
             printf("Directory entry: %s\n", dir_entry_name);
         }
     }
@@ -25,14 +23,14 @@ int is_valid_entry(struct dirent *entry) {
 }
 
 int main() {
-    char* dir_name = ".";                 // explore the contents of the current directory
-    DIR *dir_ptr;               // pointer to a directory structure
-    struct dirent* dirent_ptr;  // pointer to the current directory entry
+    char* dir_name = ".";
+    DIR *dir_ptr;
+    struct dirent* dirent_ptr;
     dir_ptr = opendir(dir_name);
 
-    if(dir_ptr == 0) {            // opendir could fail, possibly because
-        perror(dir_name);       // the directory does not exist
-    } else {                      // iterate over all directory entries
+    if(dir_ptr == 0) {
+        perror(dir_name);
+    } else {
         while(is_valid_entry(dirent_ptr = readdir(dir_ptr))) {
             print_entry(dirent_ptr->d_name);
         }
