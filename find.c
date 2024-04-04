@@ -10,10 +10,6 @@ int is_valid_entry(struct dirent *entry) {
     return (entry != NULL);
 }
 
-int is_same_str(const char *entry_name, const char *target_name) {
-    return !strcmp(entry_name, target_name);
-}
-
 void mode_to_string(int mode, char str[]) {
     strcpy(str,"----------");
     if(S_ISDIR(mode)) str[0]='d'; // directory?
@@ -62,7 +58,7 @@ int main(int argc, char* argv[]) {
         dirent_ptr = readdir(dir_ptr);
 
         while(is_valid_entry(dirent_ptr)) {
-            if (is_same_str(dirent_ptr->d_name, argv[1])) {
+            if (strstr(dirent_ptr->d_name, argv[1])) {
                 print_file_info(dirent_ptr->d_name);
             }
 
