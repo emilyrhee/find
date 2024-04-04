@@ -30,9 +30,8 @@ void mode_to_string(int mode, char str[]) {
     if(mode & S_IXOTH) str[9]='x';
 }
 
-void print_file_info(const char *file_name) {
+void print_file_info(const char *file_name, struct stat file_stat) {
     char file_path[PATH_MAX];
-    struct stat file_stat;
     
     if (getcwd(file_path, sizeof(file_path)) != NULL && stat(file_name, &file_stat) == 0) {
         char mode_str[11];
@@ -51,6 +50,7 @@ int main(int argc, char* argv[]) {
     DIR* dir_ptr;
     struct dirent* dirent_ptr;
     dir_ptr = opendir(dir_name);
+    struct stat file_stat;
 
     if(dir_ptr == NULL) {
         perror(dir_name);
@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
 
         while(is_valid_entry(dirent_ptr)) {
             if (strstr(dirent_ptr->d_name, argv[1])) {
-                print_file_info(dirent_ptr->d_name);
+                print_file_info(dirent_ptr->d_name, file_stat);
             }
 
             dirent_ptr = readdir(dir_ptr);
