@@ -12,73 +12,78 @@ int is_valid_entry(struct dirent *entry) {
 
 void mode_to_string(int mode, char str[]) {
     strcpy(str, "----------");
-    if(S_ISDIR(mode)) str[0] = 'd'; // directory?
-    if(S_ISCHR(mode)) str[0] = 'c'; // terminal?
-    if(S_ISBLK(mode)) str[0] = 'b'; // disk?
-    if(S_ISLNK(mode)) str[0] = 'l'; // link?
+    if (S_ISDIR(mode)) str[0] = 'd'; // directory?
+    if (S_ISCHR(mode)) str[0] = 'c'; // terminal?
+    if (S_ISBLK(mode)) str[0] = 'b'; // disk?
+    if (S_ISLNK(mode)) str[0] = 'l'; // link?
 
-    if(mode & S_IRUSR) str[1] = 'r'; // bits for the user
-    if(mode & S_IWUSR) str[2] = 'w';
-    if(mode & S_IXUSR) str[3] = 'x';
+    if (mode & S_IRUSR) str[1] = 'r'; // bits for the user
+    if (mode & S_IWUSR) str[2] = 'w';
+    if (mode & S_IXUSR) str[3] = 'x';
 
-    if(mode & S_IRGRP) str[4] = 'r'; // bits for the group
-    if(mode & S_IWGRP) str[5] = 'w';
-    if(mode & S_IXGRP) str[6] = 'x';
+    if (mode & S_IRGRP) str[4] = 'r'; // bits for the group
+    if (mode & S_IWGRP) str[5] = 'w';
+    if (mode & S_IXGRP) str[6] = 'x';
 
-    if(mode & S_IROTH) str[7] = 'r'; // bits for the others
-    if(mode & S_IWOTH) str[8] = 'w';
-    if(mode & S_IXOTH) str[9] = 'x';
+    if (mode & S_IROTH) str[7] = 'r'; // bits for the others
+    if (mode & S_IWOTH) str[8] = 'w';
+    if (mode & S_IXOTH) str[9] = 'x';
 }
 
-void traverse_dir(char *dir_name) {
-    DIR *dir_ptr;
-    struct dirent *dirent_ptr;
-    dir_ptr = opendir(dir_name);
+void print_file_info(const char* dir_name, const char* search_term, const char* full_path) {
+    DIR* dir_ptr = opendir(dir_name);
+    struct dirent* dirent_ptr;
 
-    printf("directory: %s\n", dir_name);
-}
-
-void print_file_info(char* file_name, struct stat file_stat, const char* search_term) {
-    char file_path[PATH_MAX];
-
-    if (getcwd(file_path, sizeof(file_path)) != NULL && stat(file_name, &file_stat) == 0) {
-        char mode_str[11];
-        int mode_number = file_stat.st_mode & 0777;
-
-        if (S_ISDIR(file_stat.st_mode) && strcmp(file_name, ".") && strcmp(file_name, "..")) {
-            traverse_dir(file_name);
-        }
-
-        if (strstr(file_name, search_term) != NULL) { // Check if file name contains search term
-            // printf("%s\n", file_path);
-            // mode_to_string(file_stat.st_mode, mode_str);
-            // printf("   %s  (%04o/%s)\n", file_name, mode_number, mode_str);
-        }
-    } else {
-        perror("getcwd() error");
+    if (dir_ptr == NULL) {
+        perror(dir_name);
+        return;
     }
+
+    dirent_ptr = readdir(dir_ptr);
+
+    while (is_valid_entry(dirent_ptr)) {
+        struct stat file_stat;
+        char file_path[PATH_MAX];
+
+        snprintf(file_path, sizeof(file_path), "%s/%s", full_path, dirent_ptr->d_name);
+
+        if (stat(file_path, &file_stat) == 0) {
+            if (strstr(dirent_ptr->d_name, search_term)) {
+                char mode_str[11];
+                int mode_number = file_stat.st_mode & 0777;
+
+                printf("%s\n", file_path);
+                mode_to_string(file_stat.st_mode, mode_str);
+                printf("   %s  (%04o/%s)\n", dirent_ptr->d_name, mode_number, mode_str);
+            }
+
+            if (S_ISDIR(file_stat.st_mode) && strcmp(dirent_ptr->d_name, ".") && strcmp(dirent_ptr->d_name, "..")) {
+                print_file_info(file_path, search_term, file_path);
+            }
+        }
+
+        dirent_ptr = readdir(dir_ptr);
+    }
+
+    closedir(dir_ptr);
 }
 
 int main(int argc, char* argv[]) {
-    char* dir_name = ".";
-    DIR* dir_ptr;
-    struct dirent* dirent_ptr;
-    dir_ptr = opendir(dir_name);
-    struct stat file_stat;
-
-    if(dir_ptr == NULL) {
-        perror(dir_name);
-    } else {
-        dirent_ptr = readdir(dir_ptr);
-
-        while(is_valid_entry(dirent_ptr)) {
-            print_file_info(dirent_ptr->d_name, file_stat, argv[1]);
-
-            dirent_ptr = readdir(dir_ptr);
-        }
+    if (argc != 2) {
+        printf("Usage: %s search_term\n", argv[0]);
         
-        closedir(dir_ptr);
+        return 1;
     }
-    
+
+    char current_dir[PATH_MAX];
+
+    if (getcwd(current_dir, sizeof(current_dir)) == NULL) {
+        perror("getcwd() error");
+
+        return 1;
+    }
+
+    print_file_info(".", argv[1], current_dir);
+
     return 0;
 }
