@@ -69,21 +69,26 @@ void print_file_info(const char* dir_name, const char* search_term, const char* 
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        printf("Usage: %s search_term\n", argv[0]);
-        
-        return 1;
-    }
-
     char current_dir[PATH_MAX];
+    char* search_term;
 
-    if (getcwd(current_dir, sizeof(current_dir)) == NULL) {
-        perror("getcwd() error");
-
+    if (argc == 1) {
+        printf("Usage: %s [path] [search term]\nCurrent path is default.", argv[0]);
         return 1;
+    } else if (argc == 2) {
+        strcpy(current_dir, ".");
+        search_term = argv[1];
+
+        if (argc <= 2 && getcwd(current_dir, sizeof(current_dir)) == NULL) {
+            perror("getcwd() error");
+            return 1;
+        }
+    } else {
+        strcpy(current_dir, argv[1]);
+        search_term = argv[2];
     }
 
-    print_file_info(".", argv[1], current_dir);
+    print_file_info(current_dir, search_term, current_dir);
 
     return 0;
 }
