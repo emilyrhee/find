@@ -5,8 +5,9 @@
 #include <unistd.h>
 #include <linux/limits.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
-int is_valid_entry(struct dirent *entry) {
+int is_valid_entry(struct dirent* entry) {
     return (entry != NULL);
 }
 
@@ -30,7 +31,14 @@ void mode_to_string(int mode, char str[]) {
     if (mode & S_IXOTH) str[9] = 'x';
 }
 
-void print_file_info(const char* dir_name, const char* search_term, const char* full_path) {
+void print_file_mode(const char* file_name, mode_t mode) {
+    char mode_str[11];
+    int mode_number = mode & 0777;
+    mode_to_string(mode, mode_str);
+    printf("   (%04o/%s)\n", mode_number, mode_str);
+}
+
+void search_and_print_files(const char* dir_name, const char* search_term, const char* full_path) {
     DIR* dir_ptr = opendir(dir_name);
     struct dirent* dirent_ptr;
 
@@ -49,16 +57,14 @@ void print_file_info(const char* dir_name, const char* search_term, const char* 
 
         if (stat(file_path, &file_stat) == 0) {
             if (strstr(dirent_ptr->d_name, search_term)) {
-                char mode_str[11];
-                int mode_number = file_stat.st_mode & 0777;
-
                 printf("%s\n", file_path);
-                mode_to_string(file_stat.st_mode, mode_str);
-                printf("   %s  (%04o/%s)\n", dirent_ptr->d_name, mode_number, mode_str);
+
+                printf("   %s", dirent_ptr->d_name);
+                print_file_mode(dirent_ptr->d_name, file_stat.st_mode);
             }
 
             if (S_ISDIR(file_stat.st_mode) && strcmp(dirent_ptr->d_name, ".") && strcmp(dirent_ptr->d_name, "..")) {
-                print_file_info(file_path, search_term, file_path);
+                search_and_print_files(file_path, search_term, file_path);
             }
         }
 
@@ -88,7 +94,7 @@ int main(int argc, char* argv[]) {
         search_term = argv[2];
     }
 
-    print_file_info(current_dir, search_term, current_dir);
+    search_and_print_files(current_dir, search_term, current_dir);
 
     return 0;
 }
