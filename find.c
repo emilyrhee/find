@@ -40,19 +40,17 @@ void print_file_mode(const char* file_name, mode_t mode) {
 
 void search_and_print_files(const char* dir_name, const char* search_term, const char* full_path) {
     DIR* dir_ptr = opendir(dir_name);
-    struct dirent* dirent_ptr;
-
     if (dir_ptr == NULL) {
         perror(dir_name);
         return;
     }
 
+    struct dirent* dirent_ptr;
     dirent_ptr = readdir(dir_ptr);
+    struct stat file_stat;
+    char file_path[PATH_MAX];
 
     while (is_valid_entry(dirent_ptr)) {
-        struct stat file_stat;
-        char file_path[PATH_MAX];
-
         snprintf(file_path, sizeof(file_path), "%s/%s", full_path, dirent_ptr->d_name);
 
         if (stat(file_path, &file_stat) == 0) {
